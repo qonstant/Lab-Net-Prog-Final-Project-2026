@@ -1,0 +1,10 @@
+ip link set eth0 address 00:00:0a:00:01:01
+ip addr add 195.11.14.5/24 dev eth0
+route add default gw 195.11.14.1 dev eth0
+arp -s 195.11.14.1 00:00:00:00:00:01
+arp -s 195.11.14.100 00:00:0a:00:01:64
+sed -i 's/\r$//' /root/.bashrc || true
+cp sshd_config /etc/ssh/
+echo -e "111111\n111111" | passwd root
+service ssh start
+echo "modbusclient " >> /shared/startup.temp

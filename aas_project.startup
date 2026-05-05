@@ -1,0 +1,17 @@
+ip address add 100.0.2.4/24 dev eth0
+ip address add 100.0.1.5/24 dev eth1
+ip address add 195.11.14.100/24 dev eth2
+ip address add 200.1.1.100/24 dev eth3
+
+ip link set eth1 address 00:00:00:00:01:05
+ip link set eth2 address 00:00:0a:00:01:64
+ip link set eth3 address 00:00:0a:00:02:64
+
+arp -i eth1 -s 100.0.1.11 00:00:00:00:01:11
+arp -i eth1 -s 100.0.1.12 00:00:00:00:01:12
+arp -i eth2 -s 195.11.14.5 00:00:0a:00:01:01
+arp -i eth2 -s 195.11.14.1 00:00:00:00:00:01
+arp -i eth3 -s 200.1.1.7 00:00:0a:00:01:02
+arp -i eth3 -s 200.1.1.1 00:00:00:00:00:04
+
+java -jar /P4_AAS.jar
