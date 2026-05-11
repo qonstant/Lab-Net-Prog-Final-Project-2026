@@ -1,0 +1,1 @@
+python3 /basyx_v2_compat.py >/var/log/basyx_v2_compat.log 2>&1 &
