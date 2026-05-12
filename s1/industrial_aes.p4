@@ -105,6 +105,8 @@ struct tcp_metadata_t
 struct metadata {
     tcp_metadata_t tcp_metadata;
     bit<1> isSec;
+    bit<1> has_modbus_function_code;
+    bit<8> modbus_function_code;
 }
 
 struct headers {
@@ -132,6 +134,8 @@ parser MyParser(packet_in packet,
 
     state start {
         meta.isSec = 0;
+        meta.has_modbus_function_code = 0;
+        meta.modbus_function_code = 0;
        transition parse_ethernet;
     }
 
@@ -208,6 +212,8 @@ parser MyParser(packet_in packet,
     }
 
     state parse_payload_modbus {
+        meta.modbus_function_code = packet.lookahead<bit<8>>();
+        meta.has_modbus_function_code = 1;
         bit<32> calculated_length = (bit<32>)((hdr.ipv4.totalLen - (((bit<16>)hdr.ipv4.ihl) * 4) - (((bit<16>)hdr.tcp.dataOffset) * 4) - 7) * 8);
         packet.extract(hdr.payload, (bit<32>)(calculated_length));
         transition accept;
@@ -231,6 +237,7 @@ control MyIngress(inout headers hdr,
                   inout standard_metadata_t standard_metadata) {
 
    register<bit<32>>(8) keys;
+   register<bit<32>>(6) modbus_function_code_packet_counts;
 
     action drop() {
         mark_to_drop(standard_metadata);
@@ -257,6 +264,23 @@ control MyIngress(inout headers hdr,
     }
 
     action no_cipher(){
+    }
+
+    action count_modbus_function_code_packet() {
+        bit<32> current_count;
+        bit<32> register_index;
+
+        if (meta.has_modbus_function_code == 1) {
+            if (meta.modbus_function_code >= 1 && meta.modbus_function_code <= 6) {
+                register_index = (bit<32>)(meta.modbus_function_code - 1);
+                modbus_function_code_packet_counts.read(current_count, register_index);
+                modbus_function_code_packet_counts.write(register_index, current_count + 1);
+            } else if (meta.modbus_function_code >= 129 && meta.modbus_function_code <= 134) {
+                register_index = (bit<32>)(meta.modbus_function_code - 129);
+                modbus_function_code_packet_counts.read(current_count, register_index);
+                modbus_function_code_packet_counts.write(register_index, current_count + 1);
+            }
+        }
     }
 
     action cipher() {
@@ -326,6 +350,7 @@ control MyIngress(inout headers hdr,
             ipv4_lpm.apply();
             if (hdr.tcp.isValid()){
                 if (hdr.modbus_tcp.isValid()){
+                    count_modbus_function_code_packet();
                     modbus_sec.apply();
                 }
             }

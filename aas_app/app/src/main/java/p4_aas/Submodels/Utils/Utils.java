@@ -29,6 +29,10 @@ public class Utils {
         return rList;
     }
 
+    public List<OperationVariable> getCustomOutputVariables(Map<String, ValueType> values) {
+        return getCustomInputVariables(values);
+    }
+
     /**
      * @param idShort
      * @param n how many Operation variables
